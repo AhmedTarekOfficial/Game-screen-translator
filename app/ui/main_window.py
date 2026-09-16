@@ -20,7 +20,6 @@ import tkinter as tk
 import tkinter.filedialog as fd
 import tkinter.messagebox as mb
 from datetime import datetime
-from io import BytesIO
 from typing import Optional
 
 import customtkinter as ctk
@@ -920,6 +919,7 @@ class MainWindow:
         overlay = RegionOverlay(
             on_capture=self._on_region_selected,
             on_cancel=self._on_capture_cancelled,
+            root=self._root,          # pass root for proper Toplevel ownership
         )
         overlay.show()
 

@@ -1,7 +1,7 @@
 # Game Screen Translator — Architecture Document
 
 > **Living Document** — Updated continuously during development.  
-> Last Updated: 2026-09-16
+> Last Updated: 2026-09-16 (v1.1 — Bug fixes applied)
 
 ---
 
@@ -121,7 +121,7 @@ PIL Image
 **Supported LLMs:**
 | LLM | API Key Config Key | Model Used |
 |---|---|---|
-| Google Gemini | `gemini_api_key` | `gemini-1.5-flash` |
+| Google Gemini | `gemini_api_key` | `gemini-3.6-flash` (fallback: 2.5-flash, 2.5-flash-lite) |
 | OpenAI | `openai_api_key` | `gpt-4o-mini` |
 
 **Translation Prompt:**
@@ -298,11 +298,21 @@ All cross-thread communication to UI uses `root.after(0, callback)`.
 | `mss` | ≥9.0.1 | Fast screen capture |
 | `easyocr` | ≥1.7.1 | Primary OCR engine |
 | `pytesseract` | ≥0.3.10 | Fallback OCR engine |
+| `numpy` | ≥1.24.0 | Array conversion for EasyOCR |
 | `pynput` | ≥1.7.6 | Global hotkey listener |
-| `google-generativeai` | ≥0.7.0 | Gemini LLM client |
+| `google-genai` | ≥2.0.0 | Gemini LLM client (new SDK) |
 | `openai` | ≥1.30.0 | OpenAI LLM client |
 
 **System Requirements:**
 - Python 3.9+
 - Tesseract OCR binary (optional, for fallback): https://github.com/tesseract-ocr/tesseract
 - Windows 10/11 (primary target)
+
+---
+
+## 7. Known Limitations
+
+- Overlay works in **borderless/windowed** game mode only (exclusive fullscreen not supported by design)
+- EasyOCR first-load takes ~5 seconds (warmup call at startup mitigates this)
+- Tesseract requires separate binary install (app shows warning if missing)
+- `pynput` hotkeys may require running as Administrator on some Windows setups

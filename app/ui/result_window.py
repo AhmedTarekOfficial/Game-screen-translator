@@ -151,6 +151,7 @@ class ResultWindow:
             bg=BG_CARD,
         )
         title_lbl.pack(side="left", padx=14, pady=10)
+        self._title_label_ref = title_lbl   # used by _flash_feedback
 
         # Close button
         close_btn = tk.Label(
@@ -420,14 +421,22 @@ class ResultWindow:
             pass
 
     def _flash_feedback(self, msg: str) -> None:
-        """Briefly flash feedback text in the title bar."""
+        """Briefly show a feedback message in the title bar label, then restore."""
         if self._win is None:
             return
         try:
-            # Simple: update title bar text briefly
-            pass
+            # Find the title label and flash it
+            if hasattr(self, "_title_label_ref") and self._title_label_ref:
+                self._title_label_ref.configure(text=msg, fg=SUCCESS_GREEN)
+                self._win.after(
+                    1500,
+                    lambda: self._title_label_ref.configure(
+                        text="🎮  Game Translator", fg=ACCENT
+                    ) if self._win else None,
+                )
         except Exception:
             pass
+
 
     # ------------------------------------------------------------------
     # Save to history

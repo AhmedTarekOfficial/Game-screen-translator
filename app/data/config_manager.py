@@ -6,7 +6,6 @@ Provides default values if the config file does not exist yet.
 """
 
 import json
-import os
 from pathlib import Path
 
 

@@ -11,7 +11,7 @@ Press ESC to cancel without capturing.
 """
 
 import tkinter as tk
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 
 class RegionOverlay:
@@ -43,9 +43,11 @@ class RegionOverlay:
         self,
         on_capture: Callable[[int, int, int, int], None],
         on_cancel: Optional[Callable] = None,
+        root: Optional[tk.Tk] = None,
     ):
         self._on_capture = on_capture
         self._on_cancel = on_cancel
+        self._root = root          # parent window for Toplevel
 
         self._start_x: Optional[int] = None
         self._start_y: Optional[int] = None
@@ -58,19 +60,20 @@ class RegionOverlay:
     # ------------------------------------------------------------------
 
     def show(self) -> None:
-        """Open the overlay window. Blocks until user captures or cancels."""
-        self._win = tk.Toplevel()
+        """Open the overlay window. Does NOT block."""
+        # Use root as parent if available so Toplevel is properly owned
+        self._win = tk.Toplevel(self._root) if self._root else tk.Toplevel()
         self._setup_window()
         self._setup_canvas()
         self._bind_events()
         self._win.focus_force()
-        self._win.grab_set()
+        # NOTE: do NOT call grab_set() — it can block pynput events on Windows
+        # and prevents the user from interacting with overlapping windows.
 
     def close(self) -> None:
         """Destroy the overlay window."""
         if self._win:
             try:
-                self._win.grab_release()
                 self._win.destroy()
             except tk.TclError:
                 pass
@@ -106,10 +109,11 @@ class RegionOverlay:
         )
         self._canvas.pack(fill="both", expand=True)
 
-        # Instruction label at top centre
+        # Instruction label at top centre — responsive to screen width
+        half_w = min(260, screen_w // 2 - 20)   # never wider than screen
         self._canvas.create_rectangle(
-            screen_w // 2 - 260, 18,
-            screen_w // 2 + 260, 52,
+            screen_w // 2 - half_w, 18,
+            screen_w // 2 + half_w, 52,
             fill=self.INSTRUCTION_BG,
             outline=self.SELECTION_COLOR,
             width=1,

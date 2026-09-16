@@ -1,7 +1,7 @@
 # Game Screen Translator — Application Progress
 
 > Task tracking document. Updated in real-time during development.
-> Status: 🟡 In Progress
+> Status: ✅ v1.1 Complete — Bug fixes applied & pushed to GitHub
 
 ---
 
@@ -31,6 +31,8 @@
 | [x] | `app/data/config_manager.py` | Reads/writes `config.json`. Manages hotkey, API keys, target language, LLM selection, OCR threshold, auto-save, auto-close timer |
 | [x] | `app/data/history_manager.py` | SQLite CRUD for translation history. Methods: add_entry, get_all, search, delete_entry, export_csv |
 
+✅ Verified: Both modules import cleanly on Python 3.14
+
 ---
 
 ## ⚙️ Core Engine
@@ -52,6 +54,8 @@
 | [x] | `app/ui/result_window.py` | Floating always-on-top popup. Shows original + translated text. Copy to clipboard, Save to history, Close buttons. Draggable title bar. Auto-close timer |
 | [x] | `app/ui/main_window.py` | Main 3-tab window: Translator (status + preview), History (searchable list), Settings (hotkey, API keys, language, LLM, OCR threshold) |
 
+✅ CustomTkinter dark theme applied. LoadingWindow animation included.
+
 ---
 
 ## 🚀 Entry Point
@@ -66,14 +70,34 @@
 
 | Status | Task | Description |
 |---|---|---|
-| [x] | Initial commit | Project structure + docs |
-| [x] | Core modules push | Data + Core layers complete |
-| [x] | UI modules push | All UI layers complete |
-| [x] | Final push | Full app with tests |
+| [x] | Initial commit | 29 files, 3601 insertions — all modules |
+| [x] | Cleanup commit | Fixed .gitignore, removed pycache |
+| [x] | Final fix push | New google-genai SDK + model fallback chain + README |
+
+🔗 Repo: https://github.com/AhmedTarekOfficial/Game-screen-translator
 
 ---
 
 ## 🐛 Known Issues / TODOs
 - Tesseract binary must be installed separately by user (documented in README)
-- EasyOCR first load is slow (~5s) — show loading indicator
+- EasyOCR first load is slow (~5s) — warmup_easyocr() called at startup to mitigate
 - Overlay may not work in exclusive fullscreen games (borderless/windowed recommended)
+- pynput may need admin rights on some Windows setups
+
+---
+
+## 🔧 v1.1 Bug Fixes (2026-09-16)
+
+| Status | Fix | Description |
+|---|---|---|
+| [x] | `requirements.txt` | Added missing `easyocr`, `pytesseract`, `numpy`. Replaced deprecated `google-generativeai` with `google-genai` |
+| [x] | `ocr_engine.py` | Fixed language singleton bug — EasyOCR reader now re-creates when language changes. Removed unused imports (`io`, `Tuple`) |
+| [x] | `hotkey_manager.py` | Fixed recording race condition — now waits for ALL keys to release via `_pressed_count` before finalising combo |
+| [x] | `overlay.py` | Removed `grab_set()` that blocked pynput. Added `root` param for proper Toplevel ownership. Fixed responsive instruction box |
+| [x] | `result_window.py` | Implemented `_flash_feedback()`. Added `_title_label_ref` for title bar access |
+| [x] | `main_window.py` | Removed unused `BytesIO` import. Passed `root` to `RegionOverlay` |
+| [x] | `config_manager.py` | Removed unused `os` import |
+| [x] | `history_manager.py` | Removed unused `datetime` import |
+| [x] | `ARCHITECTURE.md` | Updated SDK name, model names, added `numpy` to deps, added limitations section |
+
+✅ All 17 bugs from audit resolved. All core imports verified on Python 3.14.

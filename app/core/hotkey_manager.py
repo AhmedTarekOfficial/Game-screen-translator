@@ -96,6 +96,7 @@ class HotkeyManager:
             return
         self._recording = True
         self._recorded_keys = set()
+        self._pressed_count = 0          # track how many keys are currently down
         self._on_record_done = on_done
 
         # Pause the main listener while recording
@@ -156,10 +157,23 @@ class HotkeyManager:
         key_str = self._key_to_str(key)
         if key_str:
             self._recorded_keys.add(key_str)
+            self._pressed_count += 1
 
     def _record_on_release(self, key) -> None:
-        """When all keys are released, build the hotkey string and finish."""
+        """
+        Track key releases. Only finalise the recorded combo once ALL
+        pressed keys have been released (pressed_count reaches 0).
+        This prevents capturing a partial combo when modifiers release
+        before regular keys.
+        """
         if not self._recorded_keys:
+            return
+
+        # Decrement counter — clamp at 0 to avoid underflow
+        self._pressed_count = max(0, self._pressed_count - 1)
+
+        # Wait until all keys are released
+        if self._pressed_count > 0:
             return
 
         hotkey_str = "+".join(sorted(self._recorded_keys))

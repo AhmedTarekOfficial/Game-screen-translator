@@ -13,9 +13,8 @@ EasyOCR is lazy-loaded on first use to keep startup fast.
 Tesseract is optional — a warning is shown if the binary is missing.
 """
 
-import io
 import threading
-from typing import Optional, Tuple
+from typing import Optional
 
 from PIL import Image, ImageEnhance, ImageFilter
 
@@ -25,22 +24,28 @@ from PIL import Image, ImageEnhance, ImageFilter
 # ---------------------------------------------------------------------------
 
 _easyocr_reader = None
+_easyocr_languages: list[str] = []
 _easyocr_lock = threading.Lock()
 _tesseract_available = None          # None = not yet checked
 
 
 def _get_easyocr(languages: list[str] = None):
-    """Return (or create) the shared EasyOCR Reader. Thread-safe."""
-    global _easyocr_reader
+    """
+    Return (or create) the shared EasyOCR Reader. Thread-safe.
+    Re-creates the reader if the language list changes.
+    """
+    global _easyocr_reader, _easyocr_languages
     if languages is None:
         languages = ["en"]
     with _easyocr_lock:
-        if _easyocr_reader is None:
+        # Re-create reader if languages changed or not yet created
+        if _easyocr_reader is None or sorted(languages) != sorted(_easyocr_languages):
             try:
                 import easyocr  # noqa: PLC0415
                 _easyocr_reader = easyocr.Reader(
                     languages, gpu=False, verbose=False
                 )
+                _easyocr_languages = list(languages)
             except ImportError:
                 raise RuntimeError(
                     "easyocr is not installed. Run: pip install easyocr"
