@@ -78,9 +78,9 @@ def _translate_gemini(
     text: str,
     target_language: str,
     api_key: str,
-    model: str = "gemini-1.5-flash",
+    model: str = "gemini-3.6-flash",
 ) -> TranslationResult:
-    """Call Google Gemini API to translate text."""
+    """Call Google Gemini API to translate text using the new google-genai SDK."""
     if not api_key:
         return TranslationResult(
             translated_text="",
@@ -89,24 +89,45 @@ def _translate_gemini(
             llm_used="gemini",
             error="Gemini API key is not set. Please add it in Settings.",
         )
+
+    # Fallback model list if the primary is unavailable
+    models_to_try = [model, "gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
     try:
-        import google.generativeai as genai  # noqa: PLC0415
-        genai.configure(api_key=api_key)
-        model_client = genai.GenerativeModel(model)
+        from google import genai  # noqa: PLC0415
+        from google.genai import types  # noqa: PLC0415
+
+        client = genai.Client(api_key=api_key)
 
         prompt = TRANSLATION_PROMPT.format(
             target_language=target_language,
             text=text,
         )
-        response = model_client.generate_content(prompt)
-        translated = response.text.strip()
 
-        return TranslationResult(
-            translated_text=translated,
-            original_text=text,
-            target_language=target_language,
-            llm_used="gemini",
-        )
+        last_error = None
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.3,
+                        max_output_tokens=1024,
+                    ),
+                )
+                translated = response.text.strip()
+                return TranslationResult(
+                    translated_text=translated,
+                    original_text=text,
+                    target_language=target_language,
+                    llm_used=f"gemini ({model_name})",
+                )
+            except Exception as e:
+                last_error = e
+                print(f"[Translator] Model {model_name} failed: {e}, trying next...")
+                continue
+
+        raise last_error
 
     except Exception as e:
         return TranslationResult(
@@ -116,6 +137,7 @@ def _translate_gemini(
             llm_used="gemini",
             error=f"Gemini error: {e}",
         )
+
 
 
 # ---------------------------------------------------------------------------
