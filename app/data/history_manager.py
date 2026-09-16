@@ -8,7 +8,6 @@ DB file: history.db (auto-created in project root on first run).
 import csv
 import sqlite3
 from pathlib import Path
-from typing import Optional
 
 
 DB_PATH = Path(__file__).resolve().parents[2] / "history.db"

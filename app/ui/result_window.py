@@ -12,9 +12,7 @@ Features:
   • Animated progress bar for the auto-close countdown
 """
 
-import threading
 import tkinter as tk
-from tkinter import font as tkfont
 from typing import Callable, Optional
 
 

@@ -90,13 +90,24 @@ def _translate_gemini(
             error="Gemini API key is not set. Please add it in Settings.",
         )
 
-    # Fallback model list if the primary is unavailable
-    models_to_try = [model, "gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    # Import SDK once — give a clear error if not installed
+    try:
+        from google import genai          # noqa: PLC0415
+        from google.genai import types    # noqa: PLC0415
+    except ImportError:
+        return TranslationResult(
+            translated_text="",
+            original_text=text,
+            target_language=target_language,
+            llm_used="gemini",
+            error="google-genai package is not installed. Run: pip install google-genai",
+        )
+
+    # Build a deduplicated fallback list (primary first, no duplicates)
+    _fallbacks = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    models_to_try = [model] + [m for m in _fallbacks if m != model]
 
     try:
-        from google import genai  # noqa: PLC0415
-        from google.genai import types  # noqa: PLC0415
-
         client = genai.Client(api_key=api_key)
 
         prompt = TRANSLATION_PROMPT.format(
@@ -104,7 +115,7 @@ def _translate_gemini(
             text=text,
         )
 
-        last_error = None
+        last_error: Optional[Exception] = None
         for model_name in models_to_try:
             try:
                 response = client.models.generate_content(
@@ -122,12 +133,18 @@ def _translate_gemini(
                     target_language=target_language,
                     llm_used=f"gemini ({model_name})",
                 )
-            except Exception as e:
-                last_error = e
-                print(f"[Translator] Model {model_name} failed: {e}, trying next...")
-                continue
+            except Exception as model_err:
+                last_error = model_err
+                print(f"[Translator] Model {model_name} failed: {model_err}, trying next...")
 
-        raise last_error
+        # All models failed — return the last error message, not a bare raise
+        return TranslationResult(
+            translated_text="",
+            original_text=text,
+            target_language=target_language,
+            llm_used="gemini",
+            error=f"All Gemini models failed. Last error: {last_error}",
+        )
 
     except Exception as e:
         return TranslationResult(
@@ -135,7 +152,7 @@ def _translate_gemini(
             original_text=text,
             target_language=target_language,
             llm_used="gemini",
-            error=f"Gemini error: {e}",
+            error=f"Gemini client error: {e}",
         )
 
 
