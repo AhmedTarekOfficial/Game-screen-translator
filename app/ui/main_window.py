@@ -305,7 +305,7 @@ class MainWindow:
         )
         search_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         search_entry.bind("<Return>", lambda e: self._refresh_history())
-        self._history_search_var.trace("w", lambda *_: self._refresh_history())
+        self._history_search_var.trace_add("write", lambda *_: self._refresh_history())
 
         ctk.CTkButton(
             top_bar,
