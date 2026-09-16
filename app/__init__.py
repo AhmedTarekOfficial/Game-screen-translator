@@ -1,0 +1,1 @@
+# Game Screen Translator
